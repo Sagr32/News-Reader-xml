@@ -2,6 +2,7 @@ package com.sagr.newsreader.adapter;
 
 
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.sagr.newsreader.R;
+import com.sagr.newsreader.activities.WebViewActivity;
 import com.sagr.newsreader.models.NewsItem;
 
 import java.text.DateFormat;
@@ -45,9 +47,9 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
     public void onBindViewHolder(@NonNull ViewHolder holder, final int position) {
 
 
-        holder.txtTitle.setText(news.get(position).getTitle());
-        holder.txtDescription.setText(news.get(position).getDescription());
-        holder.txtDate.setText(news.get(position).getDate());
+        holder.txtTitle.setText(news.get(holder.getAdapterPosition()).getTitle());
+        holder.txtDescription.setText(news.get(holder.getAdapterPosition()).getDescription());
+        holder.txtDate.setText(news.get(holder.getAdapterPosition()).getDate());
         Log.d("TAG", "onBindViewHolder: " + news.get(holder.getAdapterPosition()).getDate());
         Log.d("ADAPTER", "onBindViewHolder: " + news.get(holder.getAdapterPosition()) + news.get(holder.getAdapterPosition()).getImageUrl());
         Glide.with(context)
@@ -57,11 +59,10 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
                 )
                 .into(holder.imageView);
 
-        holder.parent.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
+        holder.parent.setOnClickListener(v -> {
+            Intent intent = new Intent(context, WebViewActivity.class);
+            intent.putExtra("url", news.get(holder.getAdapterPosition()).getLink());
+            context.startActivity(intent);
         });
     }
 
