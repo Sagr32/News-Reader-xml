@@ -4,4 +4,5 @@
     <string name="description">Description</string>
     <string name="image_view">Image View</string>
     <string name="title">Title</string>
+    <string name="latest_news">Latest news</string>
 </resources>

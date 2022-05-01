@@ -17,127 +17,117 @@ import java.util.List;
 public class XmlParser {
     public static final String TAG = "Xml Parser";
     private final  String ns = null;
-
-    public List initXmlParser(InputStream inputStream) throws XmlPullParserException, IOException {
-        List entries = new ArrayList();
-        Log.d(TAG, "initXmlParser: started ");
-        XmlPullParser xmlPullParser =  Xml.newPullParser();
-        xmlPullParser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES,false);
-        xmlPullParser.setInput(inputStream,null);
-        xmlPullParser.nextTag();
-        return readFeed(xmlPullParser);
-
-    }
-
-    private List readFeed(XmlPullParser parser) throws XmlPullParserException, IOException {
-        List entries = new ArrayList();
-        parser.require(XmlPullParser.START_TAG,null,"rss");
-        while (parser.next() !=XmlPullParser.END_TAG){
-            if(parser.getEventType()!= XmlPullParser.START_TAG){
-                continue;
-            }
-            parser.require(XmlPullParser.START_TAG,null,"channel");
-            while (parser.next() != XmlPullParser.END_TAG){
-                if(parser.getEventType()!= XmlPullParser.START_TAG){
-                    continue;
-                }
-                String name = parser.getName();
-
-                if(name.equals("item")){
-                    if (name.equals("entry")) {
-                        entries.add(readEntry(parser));
-                    } else {
-                        skip(parser);
-                    }
-                }
-            }
+    private ArrayList<NewsItem> newsItemArrayList;
 
 
-        }
-        return  entries;
-    }
+    public ArrayList<NewsItem>  initXmlParser(InputStream inputStream) throws XmlPullParserException, IOException {
+        newsItemArrayList = new ArrayList<>();
+        Log.d(TAG, "initXMLPullParser: started");
+        XmlPullParser parser = Xml.newPullParser();
+        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+        parser.setInput(inputStream, null);
+        parser.next();
 
-
-    private NewsItem readEntry(XmlPullParser parser) throws XmlPullParserException, IOException {
-        parser.require(XmlPullParser.START_TAG, ns, "entry");
-        String title = null;
-        String description= null;
-        String link = null;
-        String date= null;
-        String imageUrl = null;
-
+        parser.require(XmlPullParser.START_TAG, null, "rss");
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.getEventType() != XmlPullParser.START_TAG) {
                 continue;
             }
-            String name = parser.getName();
-            if (name.equals("title")) {
-                title = readContent(parser,"title");
-            } else if (name.equals("pubdate")) {
-                date = readContent(parser,"pubdate");
-            } else if (name.equals("link")) {
-                link = readContent(parser,"link");
-            }
-            else if(name.equals("media:content")){
-                imageUrl = readImageUrl(parser);
-            }
-            else if(name.equals("description")){
-                description = readContent(parser,"description");
-            }
-            else {
-                skip(parser);
+
+            parser.require(XmlPullParser.START_TAG, null, "channel");
+            while (parser.next() != XmlPullParser.END_TAG) {
+                if (parser.getEventType() != XmlPullParser.START_TAG) {
+                    continue;
+                }
+
+                if (parser.getName().equals("item")){
+                    parser.require(XmlPullParser.START_TAG, null, "item");
+
+                    String title = "";
+                    String description = "";
+                    String link = "";
+                    String date = "";
+                    String imageUrl = "";
+
+                    while (parser.next() != XmlPullParser.END_TAG) {
+                        if (parser.getEventType() != XmlPullParser.START_TAG) {
+                            continue;
+                        }
+
+                        String tagName = parser.getName();
+                        switch (tagName) {
+                            case "title":
+                                title = getContent(parser, "title");
+                                break;
+                            case "description":
+                                description = getContent(parser, "description");
+                                break;
+                            case "link":
+                                link = getContent(parser, "link");
+                                break;
+                            case "pubDate":
+                                date = getContent(parser, "pubDate");
+                                break;
+                            case "media:content":
+
+                                imageUrl = readLink(parser);
+                            default:
+                                skipTag(parser);
+                                break;
+                        }
+                    }
+
+                    NewsItem item = new NewsItem(title, description, link, date,imageUrl);
+                    newsItemArrayList.add(item);
+                }else {
+                    skipTag(parser);
+                }
             }
         }
-        return new NewsItem(title,description, link,date,imageUrl);
+        return newsItemArrayList;
     }
 
-
-    private String readContent(XmlPullParser parser , String tagName) throws XmlPullParserException, IOException {
+    private String getContent (XmlPullParser parser, String tagName) throws IOException, XmlPullParserException {
+        String content = "";
         parser.require(XmlPullParser.START_TAG, null, tagName);
-        String content = readText(parser);
-        parser.require(XmlPullParser.END_TAG, null, tagName);
+
+        if (parser.next() == XmlPullParser.TEXT) {
+            content = parser.getText();
+            parser.next();
+        }
+
         return content;
     }
 
-
-
-
     // Processes link tags in the feed.
-    private String readImageUrl(XmlPullParser parser) throws IOException, XmlPullParserException {
-        String imageUrl = "";
+    private String readLink(XmlPullParser parser) throws IOException, XmlPullParserException {
+        String link = "";
         parser.require(XmlPullParser.START_TAG, null, "media:content");
         String tag = parser.getName();
-        String relType = parser.getAttributeValue(null, "rel");
+        String relType = parser.getAttributeValue(null, "url");
 
-        return imageUrl;
+        return relType;
     }
-
-
-
-    // For the tags title and summary, extracts their text values.
-    private String readText(XmlPullParser parser) throws IOException, XmlPullParserException {
-        String result = "";
-        if (parser.next() == XmlPullParser.TEXT) {
-            result = parser.getText();
-            parser.nextTag();
-        }
-        return result;
-    }
-
-    private void skip(XmlPullParser parser) throws XmlPullParserException, IOException {
+    private void skipTag(XmlPullParser parser) throws XmlPullParserException, IOException {
         if (parser.getEventType() != XmlPullParser.START_TAG) {
             throw new IllegalStateException();
         }
-        int depth = 1;
-        while (depth != 0) {
+
+        int number = 1;
+
+        while (number != 0) {
             switch (parser.next()) {
-                case XmlPullParser.END_TAG:
-                    depth--;
-                    break;
                 case XmlPullParser.START_TAG:
-                    depth++;
+                    number++;
+                    break;
+                case XmlPullParser.END_TAG:
+                    number--;
+                    break;
+                default:
                     break;
             }
         }
+
     }
+
 }

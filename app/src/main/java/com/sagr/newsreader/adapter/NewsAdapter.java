@@ -17,7 +17,13 @@ import com.bumptech.glide.Glide;
 import com.sagr.newsreader.R;
 import com.sagr.newsreader.models.NewsItem;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
 
@@ -37,10 +43,13 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, final int position) {
+
+
         holder.txtTitle.setText(news.get(position).getTitle());
         holder.txtDescription.setText(news.get(position).getDescription());
         holder.txtDate.setText(news.get(position).getDate());
-        Log.d("ADAPTER", "onBindViewHolder: "+news.get(holder.getAdapterPosition())+news.get(holder.getAdapterPosition()).getImageUrl());
+        Log.d("TAG", "onBindViewHolder: " + news.get(holder.getAdapterPosition()).getDate());
+        Log.d("ADAPTER", "onBindViewHolder: " + news.get(holder.getAdapterPosition()) + news.get(holder.getAdapterPosition()).getImageUrl());
         Glide.with(context)
                 .asBitmap()
                 .load(
